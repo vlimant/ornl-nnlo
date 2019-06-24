@@ -39,7 +39,6 @@ elif label == 'topclass':
     n_epochs_def = 5
 elif label =='hls4gru':
     base_command = "python3 TrainingDriver.py --model hls4mlGRU.py --loss categorical_crossentropy --master-gpu --features-name jetConstituentList --labels-name jet_target"
-    #fixed_metric = None
     fixed_metric = "--early-stop 'val_loss,~<,10' "
     n_epochs_def = 5
 else:
@@ -63,36 +62,37 @@ for item in options.masters.split('#'):
 for n_master,n_workers in n_masters.items():
     for n_worker in n_workers:
         n_nodes = n_worker+n_master
+        ## edit the job name and label
         job_label = '{0}-{1}-{2}-{3}'.format( label, n_master,n_worker,backend.replace('-',''))
         if options.mode:
             job_label+='-{0}'.format( options.mode )
         if fixed_metric: 
-            #job_label+=fixed_metric.replace(' ','').replace("'","").replace(",","")
             job_label+='-fixedmetric'
-        n_epochs = 1000  if fixed_metric else n_epochs_def
+        n_epochs = 10000  if fixed_metric else n_epochs_def
         if options.epochs: n_epochs = options.epochs
         if not fixed_metric:
             job_label+='-{0}epochs'.format( n_epochs )
-        #code_dir = 'mpi_learn'
-        code_dir = 'NNLO'
-        if options.hOp:
-            job_label+='-{0}Opt'.format(options.hOp)
-            #code_dir = 'mpi_opt'
-            
-        extra_com = " --monitor "
 
         if options.hOp:
+            job_label+='-{0}Opt'.format(options.hOp)
+            
+        extra_com = ""# --monitor "
+        s_check = '--checkpoint {0} --checkpoint-interval {1}'.format( job_label, options.checkp)
+        if options.hOp:
+            s_check+= ' --opt-restore '
+            ## in case of hyper-parameter optimization
             n_fold,n_par,n_it = map(int, options.hArgs.split(':'))
-            print ("for the Hopt, estaming on {0} folds of {1} nodes, running {2} parameter set in parrallel, ".format( n_fold, n_nodes, n_par))
+            print ("for the Hopt, estimating on {0} folds of {1} nodes, running {2} parameter set in parrallel, ".format( n_fold, n_nodes, n_par))
             block_size = n_fold * n_nodes
             n_nodes = 1 + n_par * block_size
             job_label+='-{0}f-{1}p'.format( n_fold, n_par )
             print ("leading to a block size of {0}, using {1} nodes in total".format( block_size, n_nodes ))
 
-            full_com ='{0} --epochs {1} {2} --n-master {3} --block-size {4} --n-fold {5} --num-iterations {6} --hyper-opt {7} {8}'.format(
+            full_com ='{} --epochs {} {} {} --n-master {} --block-size {} --n-fold {} --num-iterations {} --hyper-opt {} {}'.format(
                 'python3 OptimizationDriver.py --verbose --example {0}'.format( options.model ),
                 n_epochs,
                 fixed_metric if fixed_metric else "",
+                s_check if options.checkp else "",
                 n_master,
                 block_size, 
                 n_fold,
@@ -101,13 +101,13 @@ for n_master,n_workers in n_masters.items():
                 extra_com
             )            
         else:
-            s_check = '--checkpoint {0} --checkpoint-interval {1}'.format( job_label, options.checkp) if options.checkp else ""
+            s_check+= ' --restore {}'.format( job_label )
             full_com ='{0} --epochs {1} {2} --trial-name {3} {4} --n-masters {5} {6}'.format(
                 base_command,
                 n_epochs,
                 fixed_metric if fixed_metric else "",
                 job_label,
-                s_check,
+                s_check if options.checkp else "",
                 n_master,
                 extra_com
                 )
@@ -117,7 +117,7 @@ for n_master,n_workers in n_masters.items():
             print (pbs_name,"already created")
             if os.path.isfile(pbsid):
                 print (pbsid,"already submitted")
-                print open(pbsid).read()
+                print (open(pbsid).read())
                 if not options.force:
                     continue
             else:
@@ -139,7 +139,7 @@ for n_master,n_workers in n_masters.items():
         wall_time = "{0}:00:00".format( n_hours )
 
 
-        print (full_com)
+        #print (full_com)
         pbs.write("""#!/bin/bash
 #    Begin PBS directives
 #PBS -A csc291
@@ -166,7 +166,7 @@ date
 aprun -e PYTHONPATH=$PYTHONPATH -e HOME=$HOME -e TERM=xterm -N 1 -n {1} {3}
 """.format( wall_time,
             n_nodes,
-            code_dir,
+            'NNLO',
             full_com,
             job_label)
                   )
@@ -174,6 +174,6 @@ aprun -e PYTHONPATH=$PYTHONPATH -e HOME=$HOME -e TERM=xterm -N 1 -n {1} {3}
         os.system('tail -1 {0}'.format( pbs_name ))
         print ("a run time of",n_hours,"hours")
         print ("requesting",n_nodes,"nodes >",last_node,"switching to bin at >",next_node)
-        if raw_input("submit {0} ? ".format( pbs_name )) in ['y','yes']:
+        if input("submit {0} ? ".format( pbs_name )) in ['y','yes']:
             jib = os.popen( 'qsub {0}'.format( pbs_name )).read()
             open(pbsid,'w').write( jib )
