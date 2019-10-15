@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#SBATCH --ntasks={ntasks}
+#SBATCH --nodes={nnodes}
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:v100-32gb:4
+#SBATCH --cpus-per-task=6
+
+module load gcc
+module load openmpi2
+module load python3
+module load python3-mpi4py
+module load lib/hdf5/1.8.21-openmpi2
+module load cuda/10.1.243_418.87.00
+module load nccl
+
+
+mpirun -np {ntasks}  --tag-output  {python_command}
