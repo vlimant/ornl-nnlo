@@ -1,6 +1,6 @@
-Some instructions to run over ORNL machines
+Some instructions to run over some clusters
 
-# Titan
+# Titan (ORNL)
 
 Setup the software
 
@@ -15,9 +15,9 @@ Run cifar10 example with bayesian.
 python2 scan-learn.py --masters 1:5 --hArgs 3:2:10 --hOp bayesian --force --model cifar10
 </pre>
 
-# Summit
+# Summit (ORNL)
 
-# FlatIron Cluster (not ORNL)
+# FlatIron Cluster (Simons Institute)
 
 Without Horovod support yet
 
