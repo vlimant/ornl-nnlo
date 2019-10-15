@@ -38,7 +38,7 @@ elif label == 'topclass':
     fixed_metric = "--target-metric 'val_acc,>,0.97' "
     n_epochs_def = 5
 elif label =='hls4gru':
-    base_command = "python3 TrainingDriver.py --model hls4mlGRU.py --loss categorical_crossentropy --master-gpu --features-name jetConstituentList --labels-name jet_target"
+    base_command = "python3 TrainingDriver.py --model examples/example_hls4mlgru.py --loss categorical_crossentropy --master-gpu --features-name jetConstituentList --labels-name jet_target"
     fixed_metric = "--early-stop 'val_loss,~<,10' "
     n_epochs_def = 5
 else:
