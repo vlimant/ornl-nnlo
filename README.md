@@ -35,3 +35,22 @@ Some user installed libs
 <pre>
 pip3 install --user scikit-optimize==0.5.2
 </pre>
+
+# Popeye (SDSC
+
+Without Horovod support yet
+
+<pre>
+module load gcc
+module load openmpi2
+module load python3
+module load python3-mpi4py
+module load lib/hdf5/1.8.21-openmpi2
+module load cuda/10.1.105_418.39
+module load nccl
+</pre>
+
+Some user installed libs
+<pre>
+pip3 install --user scikit-optimize==0.5.2
+</pre>
