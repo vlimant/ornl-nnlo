@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Begin LSF Directives
+#BSUB -P HEP120
+#BSUB -W {walltime}
+#BSUB -nnodes {nnodes}
+####BSUB -alloc_flags gpumps
+#BSUB -alloc_flags "NVME"
+
+cd /ccs/home/vlimant/hep120/NNLO
+module load ibm-wml-ce
+
+jsrun -g1 -n {ntasks}  {python_command} --cache /mnt/bb/$USER

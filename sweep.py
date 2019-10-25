@@ -1,6 +1,10 @@
 import os, sys, math
 
-template = open('t_submit_t').read()
+SUMMIT=True
+
+template = open('t_submit_t_summit').read() if SUMMIT else open('t_submit_t').read()
+
+SUBMIT_COM='bsub' if SUMMIT else 'sbatch'
 
 DP='--mode downpour --optimizer adam --worker-optimizer sgd'
 EASGD='--mode easgd --worker-optimizer adam'
@@ -108,6 +112,28 @@ tests.extend([
 ])
 
 
+
+def get_walltime( n_nodes ):
+    wall_times = { 0 : 2,
+                   45 : 6 ,
+                   91 : 12,
+                   921 : 24,
+                   2764 : 24
+    }
+    last_node = None
+    next_node = None
+    for lim in sorted(wall_times.keys()):
+        n = wall_times[lim]
+        next_node = lim
+        if n_nodes > lim: 
+            n_hours = n
+            last_node = lim
+        else:
+            break
+    #wall_time = "{0}:00:00".format( n_hours )
+    wall_time = "{0}:00".format( n_hours )
+    return wall_time
+
 DO = (len(sys.argv)>1 and sys.argv[1]=='1')
 
 cache='' #'--cache /imdata/'
@@ -115,11 +141,7 @@ mpi_command = '' #'mpirun -x TERM=linux --map-by node --hostfile hostf --prefix 
 singularity_exe = '' #'singularity exec --nv -B /imdata/ -B /storage/ /storage/group/gpu/software/singularity/ibanks/edge.simg'
 ##model_run = 'python3 TrainingDriver.py --model cifar10_arch.json --train train_cifar10.list  --val test_cifar10.list --loss categorical_crossentropy {condition}  {mgpu} --n-process {nhrv} --batch {bsize} --trial-name {tname}'
 bare_bsize = 100
-model_run = 'python3 TrainingDriver.py {model} {condition}  {mgpu} --n-process {nhrv} --batch {bsize} --trial-name {tname} --checkpoint-interval 5 --checkpoint {tname} --timeline '
-
-optimization = ''
-#optimization = '--mode downpour --optimizer adam --worker-optimizer sgd'
-#optimization = '--mode easgd --worker-optimizer sgd'
+model_run = 'python3 TrainingDriver.py {model} {condition}  {mgpu} --n-process {nhrv} --batch {bsize} --trial-name {tname} --checkpoint-interval 1 --restore --checkpoint {tname} --timeline '
 
 batch_scale = True
 
@@ -127,7 +149,6 @@ base_command = ' '.join( [
     mpi_command,
     singularity_exe,
     model_run,
-    optimization,
     cache
 ])
 
@@ -185,10 +206,13 @@ for test in tests:
         print "\t",command
         #if DO: os.system(command)
         
+        walltime = get_walltime( nnodes) if SUMMIT else None 
+
         sname = tname+'.sh'
         open(sname,'w').write( template.format( ntasks = ntasks,
-                                                      nnodes = nnodes,
-                                                      python_command = command
-                                                  ))
+                                                nnodes = nnodes,
+                                                python_command = command,
+                                                walltime = walltime,
+                                            ))
                                                       
-        if DO: os.system('sbatch {}'.format( sname ))
+        if DO: os.system('{} {}'.format( SUBMIT_COM, sname ))
