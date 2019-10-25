@@ -17,6 +17,15 @@ python2 scan-learn.py --masters 1:5 --hArgs 3:2:10 --hOp bayesian --force --mode
 
 # Summit (ORNL)
 
+<pre>
+module load ibm-wml-ce
+pip install —user mpi4py
+pip install —user keras==2.2.4
+pip install —user setGPU
+pip install —user gpustat
+pip install --user scikit-optimize==0.5.2
+</pre>
+
 # FlatIron Cluster (Simons Institute)
 
 Without Horovod support yet
@@ -36,7 +45,7 @@ Some user installed libs
 pip3 install --user scikit-optimize==0.5.2
 </pre>
 
-# Popeye (SDSC
+# Popeye (SDSC)
 
 Without Horovod support yet
 
